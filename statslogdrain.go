@@ -30,8 +30,9 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 
 func processLine(w http.ResponseWriter, line string) {
 	if strings.Contains(line, "router") {
-		foo := mapFromLine(line)
-		io.WriteString(w, fmt.Sprintf("inc heroku.router.%s 1\n", foo["status"]))
+		values := mapFromLine(line)
+		log.Println(fmt.Sprintf("inc heroku.router.%s 1\n", values["status"]))
+		io.WriteString(w, fmt.Sprintf("inc heroku.router.%s 1\n", values["status"]))
 	}
 }
 
