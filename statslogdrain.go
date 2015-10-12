@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -15,11 +14,12 @@ import (
 
 // LogdrainServer does stuff #TODO
 func LogdrainServer(w http.ResponseWriter, req *http.Request) {
-	if req.URL.User == nil || !passwordValid(req.URL.User) {
+	if !passwordValid(req) {
 		log.Println("Unauthorized request:", req.URL)
 		http.Error(w, "Unauthorized", 401)
 		return
 	}
+	userName, _, _ := req.BasicAuth()
 
 	scanner := bufio.NewScanner(req.Body)
 	defer req.Body.Close()
@@ -30,11 +30,7 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 
 		} else {
 			line := scanner.Text()
-			if req.URL.User != nil {
-				processLine(req.URL.User.Username(), line)
-			} else {
-				processLine("unknown-app", line)
-			}
+			processLine(userName, line)
 		}
 	}
 }
@@ -93,10 +89,9 @@ func mapFromLine(line string) map[string]string {
 	return result
 }
 
-func passwordValid(userInfo *url.Userinfo) bool {
-	password := userPasswords[userInfo.Username()]
-	actualPassword, _ := userInfo.Password()
-	return actualPassword == password
+func passwordValid(req *http.Request) bool {
+	username, password, ok := req.BasicAuth()
+	return ok && (password == userPasswords[username])
 }
 
 func parseFloat(str string) float64 {

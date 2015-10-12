@@ -32,6 +32,7 @@ func TestRouterMetrics(t *testing.T) {
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
 
 	req, err := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
+	req.SetBasicAuth("test-app", "deadbeef")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +71,9 @@ func TestCustomMetrics(t *testing.T) {
 	client = &stubClient{}
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
 
-	req, err := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
+	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
+	req.SetBasicAuth("test-app", "deadbeef")
+
 	if err != nil {
 		log.Fatal(err)
 	}
