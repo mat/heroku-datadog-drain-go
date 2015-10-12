@@ -49,10 +49,12 @@ func collectTags(values map[string]string) []string {
 	return tags
 }
 
+var pairRegexp *regexp.Regexp
+
 func mapFromLine(line string) map[string]string {
 	result := make(map[string]string)
 
-	pairs := regexp.MustCompile(`[a-z]+=(([^"]\S+)|(["][^"]*?["]))`).FindAllString(line, -1)
+	pairs := pairRegexp.FindAllString(line, -1)
 	for _, p := range pairs {
 		keyValue := strings.SplitN(p, "=", 2)
 		key := keyValue[0]
@@ -70,17 +72,14 @@ type statsDClient interface {
 
 var client statsDClient
 
-// func SetClient(c statsDClient) {
-// 	client = c
-// }
-
 func init() {
+	pairRegexp = regexp.MustCompile(`[a-z]+=(([^"]\S+)|(["][^"]*?["]))`)
+
 	var err error
 	client, err = statsd.New("127.0.0.1:8125")
 	if err != nil {
 		log.Fatal(err)
 	}
-	// SetClient(client)
 
 	// statsdClient.Namespace = "flubber."
 	// statsdClient.Tags = append(c.Tags, "us-east-1a")
