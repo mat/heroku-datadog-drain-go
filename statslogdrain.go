@@ -29,21 +29,33 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+const customMetricsPrefix = "sample#"
+
 func processLine(w http.ResponseWriter, line string) {
 	if strings.Contains(line, "router") {
 		values := mapFromLine(line)
-		tags := collectTags(values)
+		tags := collectRouterTags(values)
 
 		client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
 		client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
 		client.TimeInMilliseconds("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
 		client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
+	} else if strings.Contains(line, "logdrain-metrics") {
+		values := mapFromLine(line)
+		tags := collectRouterTags(values)
+
+		for k, v := range values {
+			if strings.HasPrefix(k, customMetricsPrefix) {
+				sampleName := strings.TrimPrefix(k, customMetricsPrefix)
+				client.TimeInMilliseconds(fmt.Sprintf("heroku.custom.%s", sampleName), parseFloat(v), tags, 1)
+			}
+		}
 	}
 }
 
-func collectTags(values map[string]string) []string {
+func collectRouterTags(values map[string]string) []string {
 	tags := []string{}
-	tagsToUse := []string{"dyno", "method", "status", "host", "code"}
+	tagsToUse := []string{"dyno", "method", "status", "host", "code", "source"}
 	for _, tag := range tagsToUse {
 		value := values[tag]
 		if value != "" {
@@ -92,7 +104,7 @@ var client statsDClient
 const commandBufferSize = 1000
 
 func init() {
-	pairRegexp = regexp.MustCompile(`[a-z]+=(([^"]\S+)|(["][^"]*?["]))`)
+	pairRegexp = regexp.MustCompile(`\S+=(([^"]\S+)|(["][^"]*?["]))`)
 
 	var err error
 	client, err = statsd.NewBuffered("127.0.0.1:8125", commandBufferSize)

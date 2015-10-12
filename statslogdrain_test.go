@@ -10,16 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const simpleBody = `
+const routerMetricsBody = `
 255 <158>1 2015-04-02T11:52:34.520012+00:00 host heroku router - at=info method=POST path="/users" host=myapp.com request_id=c1806361-2081-42e7-a8aa-92b6808eac8e fwd="24.76.242.18" dyno=web.1 connect=1ms service=37ms status=201 bytes=828\n
 293 <158>1 2015-04-02T11:52:37.888674+00:00 host heroku router - at=info method=GET path="/users/me/tasks" host=myapp.com request_id=d66b4e46-049f-4592-b0b0-a253dc1b0c62 fwd="24.77.243.44" dyno=web.2 connect=1ms service=64ms status=200 bytes=54414\n
 255 <158>1 2015-04-02T12:52:31.520012+00:00 host heroku router - at=error code=H12 desc="Request timeout" method=GET path="/" host=myapp.com fwd=17.17.17.17 dyno=web.1 connect=6ms service=30001ms status=503 bytes=0
 `
 
-func TestSimplePost(t *testing.T) {
+func TestRouterMetrics(t *testing.T) {
 	client = &stubClient{}
 
-	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(simpleBody)))
+	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,6 +49,27 @@ func TestSimplePost(t *testing.T) {
 	}, client.(*stubClient).timings)
 }
 
+const customMetricsBody = `
+542 <134>1 2015-10-06T12:23:58.066218+00:00 app web.10: logdrain-metrics source=logdrain-metrics sample#s3_request.total=537.543ms
+`
+
+func TestCustomMetrics(t *testing.T) {
+	client = &stubClient{}
+
+	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	LogdrainServer(w, req)
+	assert.Equal(t, []timing{
+		{"heroku.custom.s3_request.total", 537, []string{"source:logdrain-metrics"}},
+		// TODO: Add app:test-app:
+		// {"heroku.custom.s3_request.total", 537, []string{"source:logdrain-metrics", "app:test-app"}},
+	}, client.(*stubClient).timings)
+}
+
 func TestMapFromLine(t *testing.T) {
 	line := `255 <158>1 2015-04-02T12:52:31.520012+00:00 host heroku router - at=error code=H12 desc="Request timeout" method=GET path="/" host=myapp.com fwd=17.17.17.17 dyno=web.1 connect=6ms service=30001ms status=503 bytes=0`
 	actual := mapFromLine(line)
@@ -73,6 +94,7 @@ func TestParseFloat(t *testing.T) {
 	assert.Equal(t, 32, int(parseFloat(" 32ms")))
 	assert.Equal(t, 32, int(parseFloat(" 32ms ")))
 	assert.Equal(t, 32, int(parseFloat("32ms ")))
+	assert.Equal(t, 537, int(parseFloat("537.543ms")))
 
 	assert.Equal(t, -1, int(parseFloat("")))
 }
