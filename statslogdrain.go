@@ -23,7 +23,11 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 
 		} else {
 			line := scanner.Text()
-			processLine(req.URL.User.Username(), line)
+			if req.URL.User != nil {
+				processLine(req.URL.User.Username(), line)
+			} else {
+				processLine("unknown-app", line)
+			}
 		}
 	}
 }
