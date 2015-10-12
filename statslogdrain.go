@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/DataDog/datadog-go/statsd"
 )
 
 // LogdrainServer does stuff #TODO
@@ -31,8 +33,10 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 func processLine(w http.ResponseWriter, line string) {
 	if strings.Contains(line, "router") {
 		values := mapFromLine(line)
+
 		log.Println(fmt.Sprintf("inc heroku.router.%s 1\n", values["status"]))
 		io.WriteString(w, fmt.Sprintf("inc heroku.router.%s 1\n", values["status"]))
+		statsdClient.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, []string{}, 1)
 	}
 }
 
@@ -48,4 +52,18 @@ func mapFromLine(line string) map[string]string {
 	}
 
 	return result
+}
+
+var statsdClient *statsd.Client
+
+func init() {
+	var err error
+	statsdClient, err = statsd.New("127.0.0.1:8125")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// statsdClient.Namespace = "flubber."
+	// statsdClient.Tags = append(c.Tags, "us-east-1a")
+	// err = c.Gauge("request.duration", 1.2, nil, 1)
 }
