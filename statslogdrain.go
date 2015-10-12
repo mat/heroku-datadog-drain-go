@@ -34,7 +34,7 @@ const customMetricsPrefix = "sample#"
 func processLine(w http.ResponseWriter, userName string, line string) {
 	if strings.Contains(line, "router") {
 		values := mapFromLine(line)
-		tags := collectRouterTags(values, userName)
+		tags := collectTags(values, userName)
 
 		client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
 		client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
@@ -42,7 +42,7 @@ func processLine(w http.ResponseWriter, userName string, line string) {
 		client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
 	} else if strings.Contains(line, "logdrain-metrics") {
 		values := mapFromLine(line)
-		tags := collectRouterTags(values, userName)
+		tags := collectTags(values, userName)
 
 		for k, v := range values {
 			if strings.HasPrefix(k, customMetricsPrefix) {
@@ -53,7 +53,7 @@ func processLine(w http.ResponseWriter, userName string, line string) {
 	}
 }
 
-func collectRouterTags(values map[string]string, userName string) []string {
+func collectTags(values map[string]string, userName string) []string {
 	tags := []string{}
 	tagsToUse := []string{"dyno", "method", "status", "host", "code", "source"}
 	for _, tag := range tagsToUse {
