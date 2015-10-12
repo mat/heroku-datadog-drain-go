@@ -3,7 +3,6 @@ package statslogdrain
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -14,8 +13,6 @@ import (
 
 // LogdrainServer does stuff #TODO
 func LogdrainServer(w http.ResponseWriter, req *http.Request) {
-	log.Println(req)
-
 	scanner := bufio.NewScanner(req.Body)
 	defer req.Body.Close()
 	for scanner.Scan() {
@@ -34,10 +31,22 @@ func processLine(w http.ResponseWriter, line string) {
 	if strings.Contains(line, "router") {
 		values := mapFromLine(line)
 
-		log.Println(fmt.Sprintf("inc heroku.router.%s 1\n", values["status"]))
-		io.WriteString(w, fmt.Sprintf("inc heroku.router.%s 1\n", values["status"]))
-		statsdClient.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, []string{}, 1)
+		tags := collectTags(values)
+		client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
+		client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
 	}
+}
+
+func collectTags(values map[string]string) []string {
+	tags := []string{}
+	tagsToUse := []string{"dyno", "method", "status", "host", "code"}
+	for _, tag := range tagsToUse {
+		value := values[tag]
+		if value != "" {
+			tags = append(tags, fmt.Sprintf("%s:%v", tag, value))
+		}
+	}
+	return tags
 }
 
 func mapFromLine(line string) map[string]string {
@@ -54,14 +63,24 @@ func mapFromLine(line string) map[string]string {
 	return result
 }
 
-var statsdClient *statsd.Client
+// StatsDClient is cool
+type statsDClient interface {
+	Count(string, int64, []string, float64) error
+}
+
+var client statsDClient
+
+// func SetClient(c statsDClient) {
+// 	client = c
+// }
 
 func init() {
 	var err error
-	statsdClient, err = statsd.New("127.0.0.1:8125")
+	client, err = statsd.New("127.0.0.1:8125")
 	if err != nil {
 		log.Fatal(err)
 	}
+	// SetClient(client)
 
 	// statsdClient.Namespace = "flubber."
 	// statsdClient.Tags = append(c.Tags, "us-east-1a")

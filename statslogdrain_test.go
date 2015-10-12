@@ -17,6 +17,8 @@ const simpleBody = `
 `
 
 func TestSimplePost(t *testing.T) {
+	client = &stubClient{}
+
 	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(simpleBody)))
 	if err != nil {
 		log.Fatal(err)
@@ -25,8 +27,14 @@ func TestSimplePost(t *testing.T) {
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
 
-	actual := w.Body.String()
-	assert.Contains(t, actual, "inc heroku.router.201 1\ninc heroku.router.200 1\ninc heroku.router.503 1")
+	assert.Equal(t, []count{
+		{"heroku.router.201", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
+		{"heroku.router.2xx", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
+		{"heroku.router.200", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
+		{"heroku.router.2xx", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
+		{"heroku.router.503", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
+		{"heroku.router.5xx", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
+	}, client.(*stubClient).counts)
 }
 
 func TestMapFromLine(t *testing.T) {
@@ -46,4 +54,19 @@ func TestMapFromLine(t *testing.T) {
 		"at":      "error",
 	}
 	assert.Equal(t, expected, actual)
+}
+
+type stubClient struct {
+	counts []count
+}
+
+func (c *stubClient) Count(name string, value int64, tags []string, rate float64) error {
+	c.counts = append(c.counts, count{name, value, tags})
+	return nil
+}
+
+type count struct {
+	key   string
+	value int64
+	tags  []string
 }
