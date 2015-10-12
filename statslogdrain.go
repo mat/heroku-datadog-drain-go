@@ -89,16 +89,14 @@ type statsDClient interface {
 
 var client statsDClient
 
+const commandBufferSize = 1000
+
 func init() {
 	pairRegexp = regexp.MustCompile(`[a-z]+=(([^"]\S+)|(["][^"]*?["]))`)
 
 	var err error
-	client, err = statsd.New("127.0.0.1:8125")
+	client, err = statsd.NewBuffered("127.0.0.1:8125", commandBufferSize)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// statsdClient.Namespace = "flubber."
-	// statsdClient.Tags = append(c.Tags, "us-east-1a")
-	// err = c.Gauge("request.duration", 1.2, nil, 1)
 }
