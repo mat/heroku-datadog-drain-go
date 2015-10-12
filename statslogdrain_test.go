@@ -19,7 +19,7 @@ const routerMetricsBody = `
 func TestRouterMetrics(t *testing.T) {
 	client = &stubClient{}
 
-	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
+	req, err := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,24 +28,24 @@ func TestRouterMetrics(t *testing.T) {
 	LogdrainServer(w, req)
 
 	assert.Equal(t, []count{
-		{"heroku.router.201", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
-		{"heroku.router.2xx", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
-		{"heroku.router.200", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
-		{"heroku.router.2xx", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
-		{"heroku.router.503", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
-		{"heroku.router.5xx", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
+		{"heroku.router.201", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.2xx", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.200", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.2xx", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.503", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
+		{"heroku.router.5xx", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
 	}, client.(*stubClient).counts)
 
 	// ['heroku.router.request.connect', 1, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 	// ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 
 	assert.Equal(t, []timing{
-		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
-		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
-		{"heroku.router.request.connect", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
-		{"heroku.router.request.service", 64, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
-		{"heroku.router.request.connect", 6, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
-		{"heroku.router.request.service", 30001, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
+		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.request.connect", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.request.service", 64, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
+		{"heroku.router.request.connect", 6, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
+		{"heroku.router.request.service", 30001, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
 	}, client.(*stubClient).timings)
 }
 
@@ -56,7 +56,7 @@ const customMetricsBody = `
 func TestCustomMetrics(t *testing.T) {
 	client = &stubClient{}
 
-	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
+	req, err := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,9 +64,7 @@ func TestCustomMetrics(t *testing.T) {
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
 	assert.Equal(t, []timing{
-		{"heroku.custom.s3_request.total", 537, []string{"source:logdrain-metrics"}},
-		// TODO: Add app:test-app:
-		// {"heroku.custom.s3_request.total", 537, []string{"source:logdrain-metrics", "app:test-app"}},
+		{"heroku.custom.s3_request.total", 537, []string{"source:logdrain-metrics", "app:test-app"}},
 	}, client.(*stubClient).timings)
 }
 

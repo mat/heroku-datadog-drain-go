@@ -23,18 +23,18 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 
 		} else {
 			line := scanner.Text()
-			// log.Println("line:", line)
-			processLine(w, line)
+			// TODO remove w param
+			processLine(w, req.URL.User.Username(), line)
 		}
 	}
 }
 
 const customMetricsPrefix = "sample#"
 
-func processLine(w http.ResponseWriter, line string) {
+func processLine(w http.ResponseWriter, userName string, line string) {
 	if strings.Contains(line, "router") {
 		values := mapFromLine(line)
-		tags := collectRouterTags(values)
+		tags := collectRouterTags(values, userName)
 
 		client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
 		client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
@@ -42,7 +42,7 @@ func processLine(w http.ResponseWriter, line string) {
 		client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
 	} else if strings.Contains(line, "logdrain-metrics") {
 		values := mapFromLine(line)
-		tags := collectRouterTags(values)
+		tags := collectRouterTags(values, userName)
 
 		for k, v := range values {
 			if strings.HasPrefix(k, customMetricsPrefix) {
@@ -53,7 +53,7 @@ func processLine(w http.ResponseWriter, line string) {
 	}
 }
 
-func collectRouterTags(values map[string]string) []string {
+func collectRouterTags(values map[string]string, userName string) []string {
 	tags := []string{}
 	tagsToUse := []string{"dyno", "method", "status", "host", "code", "source"}
 	for _, tag := range tagsToUse {
@@ -62,6 +62,8 @@ func collectRouterTags(values map[string]string) []string {
 			tags = append(tags, fmt.Sprintf("%s:%v", tag, value))
 		}
 	}
+
+	tags = append(tags, fmt.Sprintf("app:%v", userName))
 	return tags
 }
 
