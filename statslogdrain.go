@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -14,6 +15,12 @@ import (
 
 // LogdrainServer does stuff #TODO
 func LogdrainServer(w http.ResponseWriter, req *http.Request) {
+	if req.URL.User == nil || !passwordValid(req.URL.User) {
+		log.Println("Unauthorized request:", req.URL)
+		http.Error(w, "Unauthorized", 401)
+		return
+	}
+
 	scanner := bufio.NewScanner(req.Body)
 	defer req.Body.Close()
 
@@ -86,6 +93,12 @@ func mapFromLine(line string) map[string]string {
 	return result
 }
 
+func passwordValid(userInfo *url.Userinfo) bool {
+	password := userPasswords[userInfo.Username()]
+	actualPassword, _ := userInfo.Password()
+	return actualPassword == password
+}
+
 func parseFloat(str string) float64 {
 	if str == "" {
 		return -1
@@ -107,6 +120,12 @@ type statsDClient interface {
 var client statsDClient
 
 const commandBufferSize = 1000
+
+var userPasswords map[string]string
+
+func SetUserpasswords(passwordMap map[string]string) {
+	userPasswords = passwordMap
+}
 
 func init() {
 	pairRegexp = regexp.MustCompile(`\S+=(([^"]\S+)|(["][^"]*?["]))`)

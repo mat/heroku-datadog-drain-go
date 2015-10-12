@@ -16,8 +16,20 @@ const routerMetricsBody = `
 255 <158>1 2015-04-02T12:52:31.520012+00:00 host heroku router - at=error code=H12 desc="Request timeout" method=GET path="/" host=myapp.com fwd=17.17.17.17 dyno=web.1 connect=6ms service=30001ms status=503 bytes=0
 `
 
+func TestUnauthorized(t *testing.T) {
+	client = &stubClient{}
+	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
+
+	req, _ := http.NewRequest("POST", "http://test-app:wrong_password@example.com/foo", strings.NewReader(""))
+
+	w := httptest.NewRecorder()
+	LogdrainServer(w, req)
+	assert.Equal(t, 401, w.Code)
+}
+
 func TestRouterMetrics(t *testing.T) {
 	client = &stubClient{}
+	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
 
 	req, err := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
 	if err != nil {
@@ -26,6 +38,7 @@ func TestRouterMetrics(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
+	assert.Equal(t, 200, w.Code)
 
 	assert.Equal(t, []count{
 		{"heroku.router.201", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
@@ -55,6 +68,7 @@ const customMetricsBody = `
 
 func TestCustomMetrics(t *testing.T) {
 	client = &stubClient{}
+	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
 
 	req, err := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
 	if err != nil {
