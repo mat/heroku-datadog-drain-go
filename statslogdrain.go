@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
 )
@@ -15,6 +16,7 @@ import (
 func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 	scanner := bufio.NewScanner(req.Body)
 	defer req.Body.Close()
+
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			log.Println("error reading body:", err)
@@ -30,10 +32,12 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 func processLine(w http.ResponseWriter, line string) {
 	if strings.Contains(line, "router") {
 		values := mapFromLine(line)
-
 		tags := collectTags(values)
+
 		client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
 		client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
+		client.TimeInMilliseconds("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
+		client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
 	}
 }
 
@@ -65,9 +69,22 @@ func mapFromLine(line string) map[string]string {
 	return result
 }
 
+func parseFloat(str string) float64 {
+	if str == "" {
+		return -1
+	}
+
+	duration, err := time.ParseDuration(strings.TrimSpace(str))
+	if err != nil {
+		return -1
+	}
+	return duration.Seconds() * 1000.0
+}
+
 // StatsDClient is cool
 type statsDClient interface {
-	Count(string, int64, []string, float64) error
+	Count(name string, value int64, tags []string, rate float64) error
+	TimeInMilliseconds(name string, value float64, tags []string, rate float64) error
 }
 
 var client statsDClient

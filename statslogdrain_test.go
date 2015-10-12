@@ -35,6 +35,18 @@ func TestSimplePost(t *testing.T) {
 		{"heroku.router.503", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
 		{"heroku.router.5xx", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
 	}, client.(*stubClient).counts)
+
+	// ['heroku.router.request.connect', 1, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
+	// ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
+
+	assert.Equal(t, []timing{
+		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
+		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com"}},
+		{"heroku.router.request.connect", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
+		{"heroku.router.request.service", 64, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com"}},
+		{"heroku.router.request.connect", 6, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
+		{"heroku.router.request.service", 30001, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12"}},
+	}, client.(*stubClient).timings)
 }
 
 func TestMapFromLine(t *testing.T) {
@@ -56,8 +68,18 @@ func TestMapFromLine(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestParseFloat(t *testing.T) {
+	assert.Equal(t, 32, int(parseFloat("32ms")))
+	assert.Equal(t, 32, int(parseFloat(" 32ms")))
+	assert.Equal(t, 32, int(parseFloat(" 32ms ")))
+	assert.Equal(t, 32, int(parseFloat("32ms ")))
+
+	assert.Equal(t, -1, int(parseFloat("")))
+}
+
 type stubClient struct {
-	counts []count
+	counts  []count
+	timings []timing
 }
 
 func (c *stubClient) Count(name string, value int64, tags []string, rate float64) error {
@@ -65,7 +87,18 @@ func (c *stubClient) Count(name string, value int64, tags []string, rate float64
 	return nil
 }
 
+func (c *stubClient) TimeInMilliseconds(name string, value float64, tags []string, rate float64) error {
+	c.timings = append(c.timings, timing{name, int64(value), tags})
+	return nil
+}
+
 type count struct {
+	key   string
+	value int64
+	tags  []string
+}
+
+type timing struct {
 	key   string
 	value int64
 	tags  []string
