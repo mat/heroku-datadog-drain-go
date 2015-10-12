@@ -23,15 +23,14 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 
 		} else {
 			line := scanner.Text()
-			// TODO remove w param
-			processLine(w, req.URL.User.Username(), line)
+			processLine(req.URL.User.Username(), line)
 		}
 	}
 }
 
 const customMetricsPrefix = "sample#"
 
-func processLine(w http.ResponseWriter, userName string, line string) {
+func processLine(userName string, line string) {
 	if strings.Contains(line, "router") {
 		values := mapFromLine(line)
 		tags := collectTags(values, userName)
