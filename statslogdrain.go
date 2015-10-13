@@ -34,7 +34,7 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-const customMetricsPrefix = "sample#"
+const metricsPrefix = "sample#"
 
 func processLine(userName string, line string) {
 	if strings.Contains(line, "router") {
@@ -59,8 +59,8 @@ func handleMetricLine(line, userName string) {
 	tags := collectTags(values, userName)
 
 	for k, v := range values {
-		if strings.HasPrefix(k, customMetricsPrefix) {
-			sampleName := strings.TrimPrefix(k, customMetricsPrefix)
+		if strings.HasPrefix(k, metricsPrefix) {
+			sampleName := strings.TrimPrefix(k, metricsPrefix)
 			client.Histogram(fmt.Sprintf("heroku.custom.%s", sampleName), parseFloat(v), tags, 1)
 		}
 	}
@@ -71,8 +71,8 @@ func handleDynoMetrics(line, userName string) {
 	tags := collectTags(values, userName)
 
 	for k, v := range values {
-		if strings.HasPrefix(k, customMetricsPrefix) {
-			sampleName := strings.TrimPrefix(k, customMetricsPrefix)
+		if strings.HasPrefix(k, metricsPrefix) {
+			sampleName := strings.TrimPrefix(k, metricsPrefix)
 			client.Histogram(fmt.Sprintf("heroku.dyno.%s", sampleName), parseFloat(v), tags, 1)
 		}
 	}
