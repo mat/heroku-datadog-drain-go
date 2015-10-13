@@ -44,14 +44,14 @@ func TestRouterMetrics(t *testing.T) {
 	// ['heroku.router.request.connect', 1, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 	// ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 
-	assert.Equal(t, []timing{
+	assert.Equal(t, []histogram{
 		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.connect", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.service", 64, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.connect", 6, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
 		{"heroku.router.request.service", 30001, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
-	}, client.(*stubClient).timings)
+	}, client.(*stubClient).histograms)
 }
 
 const customMetricsBody = `
@@ -71,9 +71,9 @@ func TestCustomMetrics(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
-	assert.Equal(t, []timing{
+	assert.Equal(t, []histogram{
 		{"heroku.custom.s3_request.total", 537, []string{"source:logdrain-metrics", "app:test-app"}},
-	}, client.(*stubClient).timings)
+	}, client.(*stubClient).histograms)
 }
 
 func TestMapFromLine(t *testing.T) {
@@ -106,15 +106,15 @@ func TestParseFloat(t *testing.T) {
 }
 
 type stubClient struct {
-	timings []timing
+	histograms []histogram
 }
 
-func (c *stubClient) TimeInMilliseconds(name string, value float64, tags []string, rate float64) error {
-	c.timings = append(c.timings, timing{name, int64(value), tags})
+func (c *stubClient) Histogram(name string, value float64, tags []string, rate float64) error {
+	c.histograms = append(c.histograms, histogram{name, int64(value), tags})
 	return nil
 }
 
-type timing struct {
+type histogram struct {
 	key   string
 	value int64
 	tags  []string

@@ -48,8 +48,8 @@ func handleRouterLine(line, userName string) {
 	values := mapFromLine(line)
 	tags := collectTags(values, userName)
 
-	client.TimeInMilliseconds("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
-	client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
+	client.Histogram("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
+	client.Histogram("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
 }
 
 func handleMetricLine(line, userName string) {
@@ -59,7 +59,7 @@ func handleMetricLine(line, userName string) {
 	for k, v := range values {
 		if strings.HasPrefix(k, customMetricsPrefix) {
 			sampleName := strings.TrimPrefix(k, customMetricsPrefix)
-			client.TimeInMilliseconds(fmt.Sprintf("heroku.custom.%s", sampleName), parseFloat(v), tags, 1)
+			client.Histogram(fmt.Sprintf("heroku.custom.%s", sampleName), parseFloat(v), tags, 1)
 		}
 	}
 }
@@ -121,7 +121,7 @@ func parseFloat(str string) float64 {
 
 // StatsDClient is used to make testing easier
 type statsDClient interface {
-	TimeInMilliseconds(name string, value float64, tags []string, rate float64) error
+	Histogram(name string, value float64, tags []string, rate float64) error
 }
 
 var client statsDClient
