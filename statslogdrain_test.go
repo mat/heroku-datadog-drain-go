@@ -121,6 +121,7 @@ func TestMapFromLine(t *testing.T) {
 		"path":    "/",
 		"connect": "6ms",
 		"at":      "error",
+		"bytes":   "0",
 	}
 	assert.Equal(t, expected, actual)
 }
@@ -135,6 +136,7 @@ func TestParseFloat(t *testing.T) {
 	assert.Equal(t, 32.0, parseFloat("32 MB"))
 	assert.Equal(t, 537.543, parseFloat("537.543ms"))
 	assert.Equal(t, 537.543, parseFloat("537.543"))
+	assert.Equal(t, 0.0, parseFloat("0"))
 
 	assert.Equal(t, -1, int(parseFloat("")))
 }

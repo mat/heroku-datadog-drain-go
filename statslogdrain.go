@@ -98,7 +98,7 @@ func collectTags(values map[string]string, userName string) []string {
 	return tags
 }
 
-var pairRegexp = regexp.MustCompile(`\S+=(([^"]\S+)|(["][^"]*?["]))`)
+var pairRegexp = regexp.MustCompile(`\S+=(([^"]\S*)|(["][^"]*?["]))`)
 
 func mapFromLine(line string) map[string]string {
 	result := make(map[string]string)
