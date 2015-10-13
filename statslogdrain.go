@@ -40,22 +40,30 @@ const customMetricsPrefix = "sample#"
 
 func processLine(userName string, line string) {
 	if strings.Contains(line, "router") {
-		values := mapFromLine(line)
-		tags := collectTags(values, userName)
-
-		client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
-		client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
-		client.TimeInMilliseconds("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
-		client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
+		handleRouterLine(line, userName)
 	} else if strings.Contains(line, "logdrain-metrics") {
-		values := mapFromLine(line)
-		tags := collectTags(values, userName)
+		handleMetricLine(line, userName)
+	}
+}
 
-		for k, v := range values {
-			if strings.HasPrefix(k, customMetricsPrefix) {
-				sampleName := strings.TrimPrefix(k, customMetricsPrefix)
-				client.TimeInMilliseconds(fmt.Sprintf("heroku.custom.%s", sampleName), parseFloat(v), tags, 1)
-			}
+func handleRouterLine(line, userName string) {
+	values := mapFromLine(line)
+	tags := collectTags(values, userName)
+
+	client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
+	client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
+	client.TimeInMilliseconds("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
+	client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
+}
+
+func handleMetricLine(line, userName string) {
+	values := mapFromLine(line)
+	tags := collectTags(values, userName)
+
+	for k, v := range values {
+		if strings.HasPrefix(k, customMetricsPrefix) {
+			sampleName := strings.TrimPrefix(k, customMetricsPrefix)
+			client.TimeInMilliseconds(fmt.Sprintf("heroku.custom.%s", sampleName), parseFloat(v), tags, 1)
 		}
 	}
 }
