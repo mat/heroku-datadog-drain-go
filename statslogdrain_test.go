@@ -1,6 +1,8 @@
 package statslogdrain
 
 import (
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -162,4 +164,8 @@ type histogram struct {
 	key   string
 	value int64
 	tags  []string
+}
+
+func init() {
+	log.SetOutput(ioutil.Discard)
 }
