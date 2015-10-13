@@ -28,10 +28,8 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			log.Println("error reading body:", err)
-
 		} else {
-			line := scanner.Text()
-			processLine(userName, line)
+			processLine(userName, scanner.Text())
 		}
 	}
 }
