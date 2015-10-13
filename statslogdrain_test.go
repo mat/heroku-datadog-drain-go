@@ -1,7 +1,6 @@
 package statslogdrain
 
 import (
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -31,18 +30,12 @@ func TestRouterMetrics(t *testing.T) {
 	client = &stubClient{}
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
 
-	req, err := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
+	req, _ := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
 	req.SetBasicAuth("test-app", "deadbeef")
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
 	assert.Equal(t, 200, w.Code)
-
-	// ['heroku.router.request.connect', 1, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
-	// ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 
 	assert.Equal(t, []histogram{
 		{"heroku.router.request.bytes", 828, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
@@ -65,12 +58,8 @@ func TestCustomMetrics(t *testing.T) {
 	client = &stubClient{}
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
 
-	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
+	req, _ := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
 	req.SetBasicAuth("test-app", "deadbeef")
-
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
@@ -88,12 +77,8 @@ func TestDynoMetrics(t *testing.T) {
 	client = &stubClient{}
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
 
-	req, err := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(dynoMetricsBody)))
+	req, _ := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(dynoMetricsBody)))
 	req.SetBasicAuth("test-app", "deadbeef")
-
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
