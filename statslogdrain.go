@@ -50,6 +50,7 @@ func handleRouterLine(line, userName string) {
 	values := mapFromLine(line)
 	tags := collectTags(values, userName)
 
+	client.Histogram("heroku.router.request.bytes", parseFloat(values["bytes"]), tags, 1)
 	client.Histogram("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
 	client.Histogram("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
 }

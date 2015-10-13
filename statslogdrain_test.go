@@ -45,10 +45,13 @@ func TestRouterMetrics(t *testing.T) {
 	// ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 
 	assert.Equal(t, []histogram{
+		{"heroku.router.request.bytes", 828, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
+		{"heroku.router.request.bytes", 54414, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.connect", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.service", 64, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
+		{"heroku.router.request.bytes", 0, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
 		{"heroku.router.request.connect", 6, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
 		{"heroku.router.request.service", 30001, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
 	}, client.(*stubClient).histograms)
