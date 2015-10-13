@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
 )
@@ -41,6 +41,8 @@ func processLine(userName string, line string) {
 		handleRouterLine(line, userName)
 	} else if strings.Contains(line, "logdrain-metrics") {
 		handleMetricLine(line, userName)
+	} else if strings.Contains(line, "sample#load") || strings.Contains(line, "sample#memory") {
+		handleDynoMetrics(line, userName)
 	}
 }
 
@@ -60,6 +62,18 @@ func handleMetricLine(line, userName string) {
 		if strings.HasPrefix(k, customMetricsPrefix) {
 			sampleName := strings.TrimPrefix(k, customMetricsPrefix)
 			client.Histogram(fmt.Sprintf("heroku.custom.%s", sampleName), parseFloat(v), tags, 1)
+		}
+	}
+}
+
+func handleDynoMetrics(line, userName string) {
+	values := mapFromLine(line)
+	tags := collectTags(values, userName)
+
+	for k, v := range values {
+		if strings.HasPrefix(k, customMetricsPrefix) {
+			sampleName := strings.TrimPrefix(k, customMetricsPrefix)
+			client.Histogram(fmt.Sprintf("heroku.dyno.%s", sampleName), parseFloat(v), tags, 1)
 		}
 	}
 }
@@ -107,16 +121,16 @@ func passwordValid(req *http.Request) bool {
 	return ok && (password == userPasswords[username])
 }
 
-func parseFloat(str string) float64 {
-	if str == "" {
-		return -1
-	}
+var floatRegexp = regexp.MustCompile(`[^.0-9]`)
 
-	duration, err := time.ParseDuration(strings.TrimSpace(str))
+func parseFloat(str string) float64 {
+	str = floatRegexp.ReplaceAllLiteralString(str, "")
+
+	f, err := strconv.ParseFloat(str, 10)
 	if err != nil {
 		return -1
 	}
-	return duration.Seconds() * 1000.0
+	return f
 }
 
 // StatsDClient is used to make testing easier
