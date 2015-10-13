@@ -3,11 +3,13 @@ package statslogdrain
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/DataDog/datadog-go/statsd"
 )
@@ -22,16 +24,30 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	scanner := bufio.NewScanner(req.Body)
-	defer req.Body.Close()
+	reader := readerPool.Get().(*bufio.Reader)
+	reader.Reset(req.Body)
+	defer func() {
+		req.Body.Close()
+		readerPool.Put(reader)
+	}()
 
-	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			log.Println("error reading body:", err)
-		} else {
-			processLine(userName, scanner.Text())
+	for {
+		line, err := reader.ReadString('\n')
+		if err == io.EOF {
+			processLine(userName, line)
+			return
 		}
+		if err != nil {
+			log.Println("error reading body:", err)
+			return
+		}
+
+		processLine(userName, line)
 	}
+}
+
+var readerPool = sync.Pool{
+	New: func() interface{} { return bufio.NewReader(nil) },
 }
 
 const metricsPrefix = "sample#"
