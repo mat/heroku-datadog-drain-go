@@ -48,8 +48,6 @@ func handleRouterLine(line, userName string) {
 	values := mapFromLine(line)
 	tags := collectTags(values, userName)
 
-	client.Count(fmt.Sprintf("heroku.router.%s", values["status"]), 1, tags, 1)
-	client.Count(fmt.Sprintf("heroku.router.%cxx", values["status"][0]), 1, tags, 1)
 	client.TimeInMilliseconds("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
 	client.TimeInMilliseconds("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
 }
@@ -75,6 +73,11 @@ func collectTags(values map[string]string, userName string) []string {
 		if value != "" {
 			tags = append(tags, fmt.Sprintf("%s:%v", tag, value))
 		}
+	}
+
+	status := values["status"]
+	if status != "" {
+		tags = append(tags, fmt.Sprintf("statusgroup:%cxx", status[0]))
 	}
 
 	tags = append(tags, fmt.Sprintf("app:%v", userName))

@@ -41,25 +41,16 @@ func TestRouterMetrics(t *testing.T) {
 	LogdrainServer(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	assert.Equal(t, []count{
-		{"heroku.router.201", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.2xx", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.200", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.2xx", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.503", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
-		{"heroku.router.5xx", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
-	}, client.(*stubClient).counts)
-
 	// ['heroku.router.request.connect', 1, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 	// ['heroku.router.request.service', 37, ['dyno:web.1', 'method:POST', 'status:201', 'host:myapp.com', 'at:info', 'default:tag', 'app:test-app']],
 
 	assert.Equal(t, []timing{
-		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.request.connect", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.request.service", 64, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "app:test-app"}},
-		{"heroku.router.request.connect", 6, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
-		{"heroku.router.request.service", 30001, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "app:test-app"}},
+		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
+		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
+		{"heroku.router.request.connect", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
+		{"heroku.router.request.service", 64, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
+		{"heroku.router.request.connect", 6, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
+		{"heroku.router.request.service", 30001, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
 	}, client.(*stubClient).timings)
 }
 
