@@ -15,12 +15,12 @@ import (
 // LogdrainServer parses Heroku logdrain requests
 // and sends stats to datadog via statsd protocol
 func LogdrainServer(w http.ResponseWriter, req *http.Request) {
-	if !passwordValid(req) {
+	userName, valid := passwordValid(req)
+	if !valid {
 		log.Println("Unauthorized request:", req.URL)
 		http.Error(w, "Unauthorized", 401)
 		return
 	}
-	userName, _, _ := req.BasicAuth()
 
 	scanner := bufio.NewScanner(req.Body)
 	defer req.Body.Close()
@@ -116,9 +116,9 @@ func mapFromLine(line string) map[string]string {
 
 var userPasswords map[string]string
 
-func passwordValid(req *http.Request) bool {
+func passwordValid(req *http.Request) (string, bool) {
 	username, password, ok := req.BasicAuth()
-	return ok && (password == userPasswords[username])
+	return username, (ok && (password == userPasswords[username]))
 }
 
 var floatRegexp = regexp.MustCompile(`[^.0-9]`)
