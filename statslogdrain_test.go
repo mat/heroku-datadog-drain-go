@@ -113,8 +113,6 @@ func TestMapFromLine(t *testing.T) {
 
 func TestParseFloat(t *testing.T) {
 	assert.Equal(t, 32.0, parseFloat("32ms"))
-	assert.Equal(t, 32.0, parseFloat(" 32ms"))
-	assert.Equal(t, 32.0, parseFloat(" 32ms "))
 	assert.Equal(t, 32.0, parseFloat("32ms "))
 	assert.Equal(t, 32.0, parseFloat("32KB"))
 	assert.Equal(t, 32.0, parseFloat("32MB"))

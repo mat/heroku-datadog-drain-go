@@ -156,10 +156,12 @@ func passwordValid(req *http.Request) (string, bool) {
 	return username, (ok && (password == userPasswords[username]))
 }
 
-var floatRegexp = regexp.MustCompile(`[^.0-9]`)
+func notFloatRune(r rune) bool {
+	return !(r == '1' || r == '2' || r == '3' || r == '4' || r == '5' || r == '6' || r == '7' || r == '8' || r == '9' || r == '0' || r == '.')
+}
 
 func parseFloat(str string) float64 {
-	str = floatRegexp.ReplaceAllLiteralString(str, "")
+	str = strings.TrimRightFunc(str, notFloatRune)
 
 	f, err := strconv.ParseFloat(str, 10)
 	if err != nil {
