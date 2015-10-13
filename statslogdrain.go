@@ -121,7 +121,6 @@ func parseFloat(str string) float64 {
 
 // StatsDClient is used to make testing easier
 type statsDClient interface {
-	Count(name string, value int64, tags []string, rate float64) error
 	TimeInMilliseconds(name string, value float64, tags []string, rate float64) error
 }
 

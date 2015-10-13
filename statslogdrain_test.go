@@ -106,24 +106,12 @@ func TestParseFloat(t *testing.T) {
 }
 
 type stubClient struct {
-	counts  []count
 	timings []timing
-}
-
-func (c *stubClient) Count(name string, value int64, tags []string, rate float64) error {
-	c.counts = append(c.counts, count{name, value, tags})
-	return nil
 }
 
 func (c *stubClient) TimeInMilliseconds(name string, value float64, tags []string, rate float64) error {
 	c.timings = append(c.timings, timing{name, int64(value), tags})
 	return nil
-}
-
-type count struct {
-	key   string
-	value int64
-	tags  []string
 }
 
 type timing struct {
