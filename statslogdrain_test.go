@@ -20,6 +20,7 @@ const routerMetricsBody = `
 func TestUnauthorized(t *testing.T) {
 	client = &stubClient{}
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
+	enableDrainMetrics = false
 
 	req, _ := http.NewRequest("POST", "http://test-app:wrong_password@example.com/foo", strings.NewReader(""))
 
@@ -31,6 +32,7 @@ func TestUnauthorized(t *testing.T) {
 func TestRouterMetrics(t *testing.T) {
 	client = &stubClient{}
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
+	enableDrainMetrics = false
 
 	req, _ := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
 	req.SetBasicAuth("test-app", "deadbeef")

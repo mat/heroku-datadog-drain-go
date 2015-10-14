@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,12 +26,18 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 	scanner := bufio.NewScanner(req.Body)
 	defer req.Body.Close()
 
+	lines := 0
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			log.Println("error reading body:", err)
 		} else {
 			processLine(userName, scanner.Text())
 		}
+		lines++
+	}
+
+	if enableDrainMetrics {
+		client.Histogram("heroku.logdrain.lines", float64(lines), []string{"type:seen"}, 1)
 	}
 }
 
@@ -43,6 +50,10 @@ func processLine(userName string, line string) {
 		handleMetricLine(line, userName)
 	} else if strings.Contains(line, "sample#load") || strings.Contains(line, "sample#memory") {
 		handleDynoMetrics(line, userName)
+	} else {
+		if enableDrainMetrics {
+			client.Histogram("heroku.logdrain.lines", 1, []string{"type:ignored"}, 1)
+		}
 	}
 }
 
@@ -143,6 +154,8 @@ var client statsDClient
 
 const commandBufferSize = 1000
 
+var enableDrainMetrics = true
+
 // SetUserpasswords sets the required user/password map for authentication
 func SetUserpasswords(passwordMap map[string]string) {
 	userPasswords = passwordMap
@@ -153,5 +166,11 @@ func init() {
 	client, err = statsd.NewBuffered("127.0.0.1:8125", commandBufferSize)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if os.Getenv("ENABLE_DRAIN_METRICS") == "" {
+		enableDrainMetrics = true
+	} else {
+		enableDrainMetrics, _ = strconv.ParseBool(os.Getenv("ENABLE_DRAIN_METRICS"))
 	}
 }

@@ -29,7 +29,7 @@ heroku drains:add https://<your-app-slug>:<password>@<this-log-drain-app-slug>.h
 
     ALLOWED_APPS=my-app,..    # Required. Comma separated list of app names allowed to send to this drain
     <APP-NAME>_PASSWORD=..    # Required. One per allowed app where <APP-NAME> corresponds to an app name from ALLOWED_APPS
-
+    ENABLE_DRAIN_METRICS      # Optional, default=1. Enables logging of metrics about this logdrain to Datadog 
 
 ## Thanks
 
