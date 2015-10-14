@@ -111,6 +111,18 @@ func TestMapFromLine(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestMapFromLineReader(t *testing.T) {
+	line := `foo=34 stuff  bar=12 baz="56" bam="7 8"`
+	actual := mapFromLineReader(line)
+	expected := map[string]string{
+		"foo": "34",
+		"bar": "12",
+		"baz": "56",
+		"bam": "7 8",
+	}
+	assert.Equal(t, expected, actual)
+}
+
 func TestParseFloat(t *testing.T) {
 	assert.Equal(t, 32.0, parseFloat("32ms"))
 	assert.Equal(t, 32.0, parseFloat("32ms "))

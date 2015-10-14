@@ -2,7 +2,9 @@ package statslogdrain
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/DataDog/datadog-go/statsd"
 )
@@ -68,7 +71,7 @@ func processLine(line, userName string) {
 }
 
 func handleLine(handler lineHandler, line string, userName string) {
-	values := mapFromLine(line)
+	values := mapFromLineReader(line)
 	tags := collectTags(values, userName)
 
 	handler(values, tags)
@@ -124,6 +127,65 @@ func collectTags(values map[string]string, userName string) []string {
 }
 
 var pairRegexp = regexp.MustCompile(`\S+=(([^"]\S*)|(["][^"]*?["]))`)
+
+func mapFromLineReader(line string) map[string]string {
+	result := make(map[string]string)
+
+	reader := bufio.NewReaderSize(strings.NewReader(line), len(line))
+
+	parsingKey := true
+	parsingValue := false
+	quotedValue := false
+	key := bytes.Buffer{}
+	value := bytes.Buffer{}
+
+	for {
+		c, _, err := reader.ReadRune()
+		if err == io.EOF {
+			if value.Len() > 0 {
+				result[key.String()] = value.String()
+			}
+			break
+		} else if err != nil {
+			log.Panic(err)
+		}
+
+		if parsingKey && c == '=' {
+			parsingKey = false
+			parsingValue = true
+			peek, _ := reader.Peek(1)
+			quotedValue = peek[0] == '"'
+		} else if parsingKey {
+			if unicode.IsSpace(c) {
+				key.Reset()
+			} else {
+				key.WriteRune(c)
+			}
+		} else if parsingValue {
+			if quotedValue && c == '"' {
+				endOfValue := value.Len() > 0
+				if endOfValue {
+					parsingKey = true
+					parsingValue = false
+					quotedValue = false
+					result[key.String()] = value.String()
+					key.Reset()
+					value.Reset()
+				}
+			} else if !quotedValue && unicode.IsSpace(c) {
+				parsingKey = true
+				parsingValue = false
+				result[key.String()] = value.String()
+				key.Reset()
+				value.Reset()
+			} else {
+				value.WriteRune(c)
+			}
+		}
+	}
+
+	return result
+}
 
 func mapFromLine(line string) map[string]string {
 	startedAt := time.Now()
