@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
 )
@@ -44,12 +45,18 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 const metricsPrefix = "sample#"
 
 func processLine(userName string, line string) {
+	startedAt := time.Now()
+	defer trackTiming("processLine", startedAt)
+
+	values := mapFromLine(line)
+	tags := collectTags(values, userName)
+
 	if strings.Contains(line, "router") {
-		handleRouterLine(line, userName)
+		handleRouterLine(values, tags)
 	} else if strings.Contains(line, "logdrain-metrics") {
-		handleMetricLine(line, userName)
+		handleMetricLine(values, tags)
 	} else if strings.Contains(line, "sample#load") || strings.Contains(line, "sample#memory") {
-		handleDynoMetrics(line, userName)
+		handleDynoMetrics(values, tags)
 	} else {
 		if enableDrainMetrics {
 			client.Histogram("heroku.logdrain.lines", 1, []string{"type:ignored"}, 1)
@@ -57,19 +64,13 @@ func processLine(userName string, line string) {
 	}
 }
 
-func handleRouterLine(line, userName string) {
-	values := mapFromLine(line)
-	tags := collectTags(values, userName)
-
+func handleRouterLine(values map[string]string, tags []string) {
 	client.Histogram("heroku.router.request.bytes", parseFloat(values["bytes"]), tags, 1)
 	client.Histogram("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
 	client.Histogram("heroku.router.request.service", parseFloat(values["service"]), tags, 1)
 }
 
-func handleMetricLine(line, userName string) {
-	values := mapFromLine(line)
-	tags := collectTags(values, userName)
-
+func handleMetricLine(values map[string]string, tags []string) {
 	for k, v := range values {
 		if strings.HasPrefix(k, metricsPrefix) {
 			sampleName := strings.TrimPrefix(k, metricsPrefix)
@@ -78,10 +79,7 @@ func handleMetricLine(line, userName string) {
 	}
 }
 
-func handleDynoMetrics(line, userName string) {
-	values := mapFromLine(line)
-	tags := collectTags(values, userName)
-
+func handleDynoMetrics(values map[string]string, tags []string) {
 	for k, v := range values {
 		if strings.HasPrefix(k, metricsPrefix) {
 			sampleName := strings.TrimPrefix(k, metricsPrefix)
@@ -93,6 +91,9 @@ func handleDynoMetrics(line, userName string) {
 var tagsToUse = []string{"dyno", "method", "status", "host", "code", "source"}
 
 func collectTags(values map[string]string, userName string) []string {
+	startedAt := time.Now()
+	defer trackTiming("collectTags", startedAt)
+
 	tags := []string{}
 	for _, tag := range tagsToUse {
 		value := values[tag]
@@ -113,6 +114,9 @@ func collectTags(values map[string]string, userName string) []string {
 var pairRegexp = regexp.MustCompile(`\S+=(([^"]\S*)|(["][^"]*?["]))`)
 
 func mapFromLine(line string) map[string]string {
+	startedAt := time.Now()
+	defer trackTiming("mapFromLine", startedAt)
+
 	result := make(map[string]string)
 
 	pairs := pairRegexp.FindAllString(line, -1)
@@ -124,6 +128,13 @@ func mapFromLine(line string) map[string]string {
 	}
 
 	return result
+}
+
+func trackTiming(funcName string, timestamp time.Time) {
+	if enableDrainMetrics {
+		ms := time.Since(timestamp).Seconds() / 1000.0
+		client.Histogram(fmt.Sprintf("heroku.logdrain.timings.%s", funcName), ms, nil, 1)
+	}
 }
 
 var userPasswords map[string]string
