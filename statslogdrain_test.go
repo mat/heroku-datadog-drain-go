@@ -18,10 +18,7 @@ const routerMetricsBody = `
 `
 
 func TestUnauthorized(t *testing.T) {
-	client = &stubClient{}
-	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
-	enableDrainMetrics = false
-
+	initServer()
 	req, _ := http.NewRequest("POST", "http://test-app:wrong_password@example.com/foo", strings.NewReader(""))
 
 	w := httptest.NewRecorder()
@@ -30,9 +27,7 @@ func TestUnauthorized(t *testing.T) {
 }
 
 func TestRouterMetrics(t *testing.T) {
-	client = &stubClient{}
-	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
-	enableDrainMetrics = false
+	initServer()
 
 	req, _ := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
 	req.SetBasicAuth("test-app", "deadbeef")
@@ -59,8 +54,7 @@ const customMetricsBody = `
 `
 
 func TestCustomMetrics(t *testing.T) {
-	client = &stubClient{}
-	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
+	initServer()
 
 	req, _ := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(customMetricsBody)))
 	req.SetBasicAuth("test-app", "deadbeef")
@@ -78,8 +72,7 @@ const dynoMetricsBody = `
 `
 
 func TestDynoMetrics(t *testing.T) {
-	client = &stubClient{}
-	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
+	initServer()
 
 	req, _ := http.NewRequest("POST", "http://example.com/foo", strings.NewReader(strings.TrimSpace(dynoMetricsBody)))
 	req.SetBasicAuth("test-app", "deadbeef")
@@ -148,6 +141,9 @@ type histogram struct {
 	tags  []string
 }
 
-func init() {
+func initServer() {
+	client = &stubClient{}
+	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
+	enableDrainMetrics = false
 	log.SetOutput(ioutil.Discard)
 }
