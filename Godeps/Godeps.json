@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/mat/statslogdrain",
+	"ImportPath": "github.com/mat/heroku-datadog-drain-go",
 	"GoVersion": "go1.5.1",
 	"Deps": [
 		{

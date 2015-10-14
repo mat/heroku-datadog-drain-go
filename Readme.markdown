@@ -1,10 +1,34 @@
-# statslogdrain
+# heroku-datadog-drain-go
 
-A Heroku HTTP log drain forwarding metric data to Datadog.
+[![Build Status](https://travis-ci.org/mat/heroku-datadog-drain-go.svg)](https://travis-ci.org/mat/heroku-datadog-drain-go)
 
-Similar to <https://github.com/ozinc/heroku-datadog-drain> but written in Go.
+Heroku log drain forwarding metrics to Datadog. This is a liberal port of <https://github.com/ozinc/heroku-datadog-drain> to Go.
 
-[![Build Status](https://travis-ci.org/mat/statslogdrain.svg)](https://travis-ci.org/mat/statslogdrain)
+Supported Heroku metrics:
+
+* Router response times, status codes
+* Dyno runtime metrics
+* Todo: Heroku Postgres metrics
+
+
+## How setup a logdrain dyno
+
+
+```bash
+git clone git@github.com:mat/heroku-datadog-drain-go.git
+cd heroku-datadog-drain-go
+heroku create
+heroku config:set ALLOWED_APPS=<your-app-slug> <YOUR-APP-SLUG>_PASSWORD=<password>
+git push heroku master
+heroku ps:scale web=1
+heroku drains:add https://<your-app-slug>:<password>@<this-log-drain-app-slug>.herokuapp.com/ --app <your-app-slug>
+```
+
+
+## Configuration
+
+    ALLOWED_APPS=my-app,..    # Required. Comma separated list of app names allowed to send to this drain
+    <APP-NAME>_PASSWORD=..    # Required. One per allowed app where <APP-NAME> corresponds to an app name from ALLOWED_APPS
 
 
 ## Thanks

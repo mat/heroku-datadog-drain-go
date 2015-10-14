@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mat/statslogdrain"
+	"github.com/mat/heroku-datadog-drain-go"
 )
 
 func main() {
