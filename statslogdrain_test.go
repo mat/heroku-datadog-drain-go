@@ -133,26 +133,6 @@ func TestParseFloat(t *testing.T) {
 	assert.Equal(t, -1, int(parseFloat("")))
 }
 
-func BenchmarkHttpEndpoint(b *testing.B) {
-	client = &noopClient{}
-	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		req, _ := http.NewRequest("POST", "http://test-app:deadbeef@example.com/foo", strings.NewReader(strings.TrimSpace(routerMetricsBody)))
-		req.SetBasicAuth("test-app", "deadbeef")
-		w := httptest.NewRecorder()
-		LogdrainServer(w, req)
-	}
-}
-
-type noopClient struct {
-}
-
-func (c *noopClient) Histogram(name string, value float64, tags []string, rate float64) error {
-	return nil
-}
-
 type stubClient struct {
 	histograms []histogram
 }
