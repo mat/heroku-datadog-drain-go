@@ -38,7 +38,7 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if enableDrainMetrics {
-		client.Histogram("heroku.logdrain.lines", float64(lines), []string{"type:seen"}, 1)
+		client.Count("heroku.logdrain.lines", int64(lines), []string{"type:seen"}, 1)
 	}
 }
 
@@ -59,7 +59,7 @@ func processLine(userName string, line string) {
 		handleDynoMetrics(values, tags)
 	} else {
 		if enableDrainMetrics {
-			client.Histogram("heroku.logdrain.lines", 1, []string{"type:ignored"}, 1)
+			client.Count("heroku.logdrain.lines", int64(1), []string{"type:ignored"}, 1)
 		}
 	}
 }
