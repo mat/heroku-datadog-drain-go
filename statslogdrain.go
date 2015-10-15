@@ -32,7 +32,7 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 		if err := scanner.Err(); err != nil {
 			log.Println("error reading body:", err)
 		} else {
-			processLine(userName, scanner.Text())
+			processLine(scanner.Text(), userName)
 		}
 		lines++
 	}
@@ -50,7 +50,7 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 
 const metricsPrefix = "sample#"
 
-func processLine(userName string, line string) {
+func processLine(line, userName string) {
 	startedAt := time.Now()
 	defer trackTiming("processLine", startedAt)
 
