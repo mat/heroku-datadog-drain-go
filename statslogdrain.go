@@ -65,7 +65,6 @@ func processLine(userName string, line string) {
 }
 
 func handleRouterLine(values map[string]string, tags []string) {
-	client.Count("heroku.router.request.count", 1, tags, 1)
 	client.Histogram("heroku.router.request.bytes", parseFloat(values["bytes"]), tags, 1)
 	client.Histogram("heroku.router.request.connect", parseFloat(values["connect"]), tags, 1)
 	client.Histogram("heroku.router.request.service", parseFloat(values["service"]), tags, 1)

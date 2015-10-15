@@ -37,11 +37,6 @@ func TestRouterMetrics(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 
 	assert.Equal(t, []command{
-		{"heroku.router.request.count", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
-		{"heroku.router.request.count", 1, []string{"dyno:web.2", "method:GET", "status:200", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
-		{"heroku.router.request.count", 1, []string{"dyno:web.1", "method:GET", "status:503", "host:myapp.com", "code:H12", "statusgroup:5xx", "app:test-app"}},
-	}, client.(*stubClient).counts)
-	assert.Equal(t, []command{
 		{"heroku.router.request.bytes", 828, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
