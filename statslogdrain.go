@@ -54,21 +54,27 @@ func processLine(userName string, line string) {
 	startedAt := time.Now()
 	defer trackTiming("processLine", startedAt)
 
-	values := mapFromLine(line)
-	tags := collectTags(values, userName)
-
 	if strings.Contains(line, "router") {
-		handleRouterLine(values, tags)
+		handleLine(handleRouterLine, line, userName)
 	} else if strings.Contains(line, "logdrain-metrics") {
-		handleMetricLine(values, tags)
+		handleLine(handleMetricLine, line, userName)
 	} else if strings.Contains(line, "sample#load") || strings.Contains(line, "sample#memory") {
-		handleDynoMetrics(values, tags)
+		handleLine(handleDynoMetrics, line, userName)
 	} else {
 		if enableDrainMetrics {
 			client.Count("heroku.logdrain.lines", int64(1), []string{"type:ignored"}, 1)
 		}
 	}
 }
+
+func handleLine(handler lineHandler, line string, userName string) {
+	values := mapFromLine(line)
+	tags := collectTags(values, userName)
+
+	handler(values, tags)
+}
+
+type lineHandler func(values map[string]string, tags []string)
 
 func handleRouterLine(values map[string]string, tags []string) {
 	client.Histogram("heroku.router.request.bytes", parseFloat(values["bytes"]), tags, 1)
