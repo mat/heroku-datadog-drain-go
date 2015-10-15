@@ -40,6 +40,12 @@ func LogdrainServer(w http.ResponseWriter, req *http.Request) {
 	if enableDrainMetrics {
 		client.Count("heroku.logdrain.lines", int64(lines), []string{"type:seen"}, 1)
 	}
+
+	// Don't return unnecessary headers
+	header := w.Header()
+	header["Content-Type"] = nil
+	header["Connection"] = nil
+	header["Date"] = nil
 }
 
 const metricsPrefix = "sample#"
