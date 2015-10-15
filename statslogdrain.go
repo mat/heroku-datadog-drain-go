@@ -163,7 +163,7 @@ type statsDClient interface {
 
 var client statsDClient
 
-const commandBufferSize = 1000
+const defaultCommandBufferSize = 100
 
 var enableDrainMetrics = true
 
@@ -173,7 +173,11 @@ func SetUserpasswords(passwordMap map[string]string) {
 }
 
 func init() {
-	var err error
+	commandBufferSize, err := strconv.Atoi(os.Getenv("COMMAND_BUFFER_SIZE"))
+	if err != nil {
+		commandBufferSize = defaultCommandBufferSize
+	}
+
 	client, err = statsd.NewBuffered("127.0.0.1:8125", commandBufferSize)
 	if err != nil {
 		log.Fatal(err)
