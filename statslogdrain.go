@@ -159,6 +159,7 @@ func parseFloat(str string) float64 {
 // StatsDClient is used to make testing easier
 type statsDClient interface {
 	Histogram(name string, value float64, tags []string, rate float64) error
+	Count(name string, value int64, tags []string, rate float64) error
 }
 
 var client statsDClient

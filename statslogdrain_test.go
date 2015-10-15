@@ -36,7 +36,7 @@ func TestRouterMetrics(t *testing.T) {
 	LogdrainServer(w, req)
 	assert.Equal(t, 200, w.Code)
 
-	assert.Equal(t, []histogram{
+	assert.Equal(t, []command{
 		{"heroku.router.request.bytes", 828, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.connect", 1, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
 		{"heroku.router.request.service", 37, []string{"dyno:web.1", "method:POST", "status:201", "host:myapp.com", "statusgroup:2xx", "app:test-app"}},
@@ -61,7 +61,7 @@ func TestCustomMetrics(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
-	assert.Equal(t, []histogram{
+	assert.Equal(t, []command{
 		{"heroku.custom.s3_request.total", 537, []string{"source:logdrain-metrics", "app:test-app"}},
 	}, client.(*stubClient).histograms)
 }
@@ -80,15 +80,15 @@ func TestDynoMetrics(t *testing.T) {
 	w := httptest.NewRecorder()
 	LogdrainServer(w, req)
 	assert.Len(t, client.(*stubClient).histograms, 9)
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.load_avg_1m", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.load_avg_5m", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.load_avg_15m", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.memory_total", 103, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.memory_rss", 94, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.memory_cache", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.memory_swap", 8, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.memory_pgpgin", 36091, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
-	assert.Contains(t, client.(*stubClient).histograms, histogram{"heroku.dyno.memory_pgpgout", 11765, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.load_avg_1m", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.load_avg_5m", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.load_avg_15m", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.memory_total", 103, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.memory_rss", 94, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.memory_cache", 0, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.memory_swap", 8, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.memory_pgpgin", 36091, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
+	assert.Contains(t, client.(*stubClient).histograms, command{"heroku.dyno.memory_pgpgout", 11765, []string{"dyno:heroku.35930502.b9de5fce-44b7-4287-99a7-504519070cba", "source:web.1", "app:test-app"}})
 }
 
 func TestMapFromLine(t *testing.T) {
@@ -127,15 +127,21 @@ func TestParseFloat(t *testing.T) {
 }
 
 type stubClient struct {
-	histograms []histogram
+	histograms []command
+	counts     []command
 }
 
 func (c *stubClient) Histogram(name string, value float64, tags []string, rate float64) error {
-	c.histograms = append(c.histograms, histogram{name, int64(value), tags})
+	c.histograms = append(c.histograms, command{name, int64(value), tags})
 	return nil
 }
 
-type histogram struct {
+func (c *stubClient) Count(name string, value int64, tags []string, rate float64) error {
+	c.counts = append(c.counts, command{name, int64(value), tags})
+	return nil
+}
+
+type command struct {
 	key   string
 	value int64
 	tags  []string

@@ -39,3 +39,7 @@ type noopClient struct {
 func (c *noopClient) Histogram(name string, value float64, tags []string, rate float64) error {
 	return nil
 }
+
+func (c *noopClient) Count(name string, value int64, tags []string, rate float64) error {
+	return nil
+}
