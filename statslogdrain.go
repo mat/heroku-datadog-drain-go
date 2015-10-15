@@ -164,8 +164,6 @@ type statsDClient interface {
 
 var client statsDClient
 
-const defaultCommandBufferSize = 100
-
 var enableDrainMetrics = true
 
 // SetUserpasswords sets the required user/password map for authentication
@@ -174,17 +172,8 @@ func SetUserpasswords(passwordMap map[string]string) {
 }
 
 func init() {
-	commandBufferSize, err := strconv.Atoi(os.Getenv("COMMAND_BUFFER_SIZE"))
-	if err != nil {
-		commandBufferSize = defaultCommandBufferSize
-	}
-
-	if commandBufferSize <= 0 {
-		client, err = statsd.New("127.0.0.1:8125")
-	} else {
-		client, err = statsd.NewBuffered("127.0.0.1:8125", commandBufferSize)
-	}
-
+	var err error
+	client, err = statsd.New("127.0.0.1:8125")
 	if err != nil {
 		log.Fatal(err)
 	}
