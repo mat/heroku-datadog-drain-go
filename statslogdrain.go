@@ -180,7 +180,12 @@ func init() {
 		commandBufferSize = defaultCommandBufferSize
 	}
 
-	client, err = statsd.NewBuffered("127.0.0.1:8125", commandBufferSize)
+	if commandBufferSize <= 0 {
+		client, err = statsd.New("127.0.0.1:8125")
+	} else {
+		client, err = statsd.NewBuffered("127.0.0.1:8125", commandBufferSize)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
