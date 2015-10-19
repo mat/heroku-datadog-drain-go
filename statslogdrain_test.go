@@ -150,6 +150,5 @@ type command struct {
 func initServer() {
 	client = &stubClient{}
 	SetUserpasswords(map[string]string{"test-app": "deadbeef"})
-	enableDrainMetrics = false
 	log.SetOutput(ioutil.Discard)
 }
